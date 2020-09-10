@@ -1,6 +1,7 @@
 platform :ios, '10.0'
 
 target 'SwiftHookDemo' do
-  use_frameworks!  
+#  use_frameworks!
   pod 'EasySwiftHook', :path=>'../'
+  pod 'libffi-iOS', :path=>'../../libffi'
 end
