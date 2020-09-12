@@ -25,4 +25,14 @@ struct ComplexityStruct {
     } s;
 };
 
+struct EmptyStruct {
+    
+};
+
+struct InternalEmptyStruct {
+    int i;
+    struct {
+    } s;
+};
+
 #endif /* ComplexityStruct_h */

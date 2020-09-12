@@ -291,4 +291,46 @@ class ParametersCheckingTests: XCTestCase {
             XCTAssertNil(error)
         }
     }
+    
+    func test_Empty_Struct() {
+        class MyObject {
+            @objc dynamic func myMethod1() -> EmptyStruct {
+                return EmptyStruct.init()
+            }
+            
+            @objc dynamic func myMethod2(s: EmptyStruct) {
+                
+            }
+            
+            @objc dynamic func myMethod3(s: EmptyStruct) -> EmptyStruct {
+                return EmptyStruct.init()
+            }
+        }
+        
+        do {
+            try hookBefore(object: MyObject.init(), selector: #selector(MyObject.myMethod1)) {
+            }
+            XCTFail()
+        } catch SwiftHookError.canNotHookClassWithObjectAPI {
+            <#statements#>
+        }
+        
+        
+    }
+    
+    func test_Internal_Empty_Struct() {
+        class MyObject {
+            @objc dynamic func myMethod1() -> InternalEmptyStruct {
+                return InternalEmptyStruct.init()
+            }
+            
+            @objc dynamic func myMethod2(s: InternalEmptyStruct) {
+                
+            }
+            
+            @objc dynamic func myMethod3(s: InternalEmptyStruct) -> InternalEmptyStruct {
+                return InternalEmptyStruct.init()
+            }
+        }
+    }
 }
