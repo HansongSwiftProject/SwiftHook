@@ -35,13 +35,13 @@ public enum SwiftHookError: Error {
     }
     
     case unsupport(value: Unsupport)
-    case noRespondSelector
-    case missingSignature // Please check if there is keyword @convention(block) for the clousre
-    case incompatibleClosureSignature
+    case noRespondSelector // Can't find the method from the selector.
+    case missingSignature // Please check the hook clousre. Is it a standard closure? Does it have keyword @convention(block)?
+    case incompatibleClosureSignature // Please check the hook closure. Does it match to the method?
     case canNotHookClassWithObjectAPI // Please use "hookClassMethod" instead.
     case duplicateHookClosure // This closure already hooked with one mode.
-    case ffiError
-    case internalError(file: String, line: Int)
+    case ffiError // The error from FFI. Please raise aa issue: https://github.com/623637646/SwiftHook/issues/new
+    case internalError(file: String, line: Int) // Please raise aa issue: https://github.com/623637646/SwiftHook/issues/new
 }
 
 // MARK: - Token
