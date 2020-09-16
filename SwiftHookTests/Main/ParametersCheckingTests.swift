@@ -15,6 +15,7 @@ private let autoreleaseSelector = NSSelectorFromString("autorelease")
 private let blacklistSelectors = [retainSelector, releaseSelector, autoreleaseSelector]
 
 // TODO: 移除了很多 SignatureTests 里的 testcase，检查是否需要更全面的 ParametersCheckingTests？
+// TODO: 更丰富的ParametersCheckingTests， 应该包含所有的SwiftHookError的类型
 class ParametersCheckingTests: XCTestCase {
     
     func testCanNotHookClassWithObjectAPI() {
@@ -155,7 +156,8 @@ class ParametersCheckingTests: XCTestCase {
                 return 1
                 } as @convention(block) (Int, Int) -> Int as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `befor` and `after` mode. The return type of the hook closure mush be `void`. But it's `q`")
         } catch {
             XCTAssertNil(error)
         }
@@ -163,7 +165,8 @@ class ParametersCheckingTests: XCTestCase {
             try hookAfter(object: TestObject(), selector: #selector(TestObject.sumFunc(a:b:)), closure: { _, _ in
                 } as @convention(block) (Int, Double) -> Void as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `befor` and `after` mode. The parameters type of the hook closure must be the same as method's. The closure parameters type is `qd`. But the method parameters type is `@:qq`. They are not the same.")
         } catch {
             XCTAssertNil(error)
         }
@@ -171,7 +174,8 @@ class ParametersCheckingTests: XCTestCase {
             try hookAfter(object: TestObject(), selector: #selector(TestObject.testStructSignature(point:rect:)), closure: ({_, _ in
                 } as @convention(block) (CGPoint, Double) -> Void) as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `befor` and `after` mode. The parameters type of the hook closure must be the same as method's. The closure parameters type is `{CGPoint=dd}d`. But the method parameters type is `@:{CGPoint=dd}{CGRect={CGPoint=dd}{CGSize=dd}}`. They are not the same.")
         } catch {
             XCTAssertNil(error)
         }
@@ -179,7 +183,8 @@ class ParametersCheckingTests: XCTestCase {
             try hookInstead(targetClass: TestObject.self, selector: #selector(TestObject.sumFunc(a:b:)), closure: { _, _ in
                 } as @convention(block) (Int, Int) -> Void as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `instead` mode. The number of hook closure parameters should be equal to the number of method parameters + 1 (The first parameter is the `original` closure. The rest is the same as method's). The hook closure parameters number is 2. The method parameters number is 4.")
         } catch {
             XCTAssertNil(error)
         }
@@ -217,7 +222,8 @@ class ParametersCheckingTests: XCTestCase {
                 return Int(result)
                 } as @convention(block) ((Int, Int) -> Double, Int, Int) -> Int as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `instead` mode. The number of hook closure parameters should be equal to the number of method parameters + 1 (The first parameter is the `original` closure. The rest is the same as method's). The hook closure parameters number is 3. The method parameters number is 4.")
         } catch {
             XCTAssertNil(error)
         }
@@ -227,7 +233,8 @@ class ParametersCheckingTests: XCTestCase {
                 return Int(result)
                 } as @convention(block) ((NSObject, Int) -> Int, Int, Int) -> Int as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `instead` mode. The number of hook closure parameters should be equal to the number of method parameters + 1 (The first parameter is the `original` closure. The rest is the same as method's). The hook closure parameters number is 3. The method parameters number is 4.")
         } catch {
             XCTAssertNil(error)
         }
@@ -237,7 +244,8 @@ class ParametersCheckingTests: XCTestCase {
                 return Int(result)
                 } as @convention(block) ((Int, Int, Int) -> Int, Int, Int) -> Int as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `instead` mode. The number of hook closure parameters should be equal to the number of method parameters + 1 (The first parameter is the `original` closure. The rest is the same as method's). The hook closure parameters number is 3. The method parameters number is 4.")
         } catch {
             XCTAssertNil(error)
         }
@@ -247,7 +255,8 @@ class ParametersCheckingTests: XCTestCase {
                 return Int(result)
                 } as @convention(block) ((Int) -> Int, Int, Int) -> Int as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `instead` mode. The number of hook closure parameters should be equal to the number of method parameters + 1 (The first parameter is the `original` closure. The rest is the same as method's). The hook closure parameters number is 3. The method parameters number is 4.")
         } catch {
             XCTAssertNil(error)
         }
@@ -259,7 +268,9 @@ class ParametersCheckingTests: XCTestCase {
                 original(o, s)
                 } as @convention(block) ((AnyObject, Selector) -> Void, AnyObject, Selector) -> Void as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            // TODO: 这里的``其实应该换个描述，因为hook的是dealloc方法
+            XCTAssertEqual(description, "For `befor` and `after` mode. The parameters type of the hook closure must be the same as method's. The closure parameters type is `@?@:`. But the method parameters type is ``. They are not the same.")
         } catch {
             XCTAssertNil(error)
         }
@@ -268,7 +279,8 @@ class ParametersCheckingTests: XCTestCase {
                 original(o, s)
                 } as @convention(block) ((AnyObject, Selector) -> Void, AnyObject, Selector) -> Void as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {// TODO: 这里的``其实应该换个描述，因为hook的是dealloc方法
+            XCTAssertEqual(description, "For `befor` and `after` mode. The parameters type of the hook closure must be the same as method's. The closure parameters type is `@?@:`. But the method parameters type is ``. They are not the same.")
         } catch {
             XCTAssertNil(error)
         }
@@ -277,7 +289,8 @@ class ParametersCheckingTests: XCTestCase {
                 original(o, s)
                 } as @convention(block) ((AnyObject, Selector) -> Void, AnyObject, Selector) -> Void as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `instead` mode. The number of hook closure parameters should be equal to the number of method parameters + 1 (The first parameter is the `original` closure. The rest is the same as method's). The hook closure parameters number is 3. The method parameters number is 0.")
         } catch {
             XCTAssertNil(error)
         }
@@ -286,7 +299,8 @@ class ParametersCheckingTests: XCTestCase {
                 original(o, s)
                 } as @convention(block) ((AnyObject, Selector) -> Void, AnyObject, Selector) -> Void as AnyObject)
             XCTFail()
-        } catch SwiftHookError.incompatibleClosureSignature {
+        } catch SwiftHookError.incompatibleClosureSignature(description: let description) {
+            XCTAssertEqual(description, "For `instead` mode. The number of hook closure parameters should be equal to the number of method parameters + 1 (The first parameter is the `original` closure. The rest is the same as method's). The hook closure parameters number is 3. The method parameters number is 0.")
         } catch {
             XCTAssertNil(error)
         }

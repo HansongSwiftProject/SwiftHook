@@ -37,7 +37,7 @@ public enum SwiftHookError: Error {
     case unsupport(value: Unsupport)
     case noRespondSelector // Can't find the method from the selector.
     case missingSignature // Please check the hook clousre. Is it a standard closure? Does it have keyword @convention(block)?
-    case incompatibleClosureSignature // Please check the hook closure. Does it match to the method?
+    case incompatibleClosureSignature(description: String) // Please check the hook closure. Does it match to the method?
     case canNotHookClassWithObjectAPI // Please use "hookClassMethod" instead.
     case duplicateHookClosure // This closure already hooked with one mode.
     case ffiError // The error from FFI. Please raise aa issue: https://github.com/623637646/SwiftHook/issues/new
