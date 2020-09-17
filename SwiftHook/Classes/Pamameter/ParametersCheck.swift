@@ -86,7 +86,7 @@ func parametersCheck(targetClass: AnyClass, selector: Selector, mode: HookMode, 
             }
         }
     case .instead:
-        // original closure (first parameter)
+        // Original closure (first parameter)
         guard closureArgumentTypes.count == methodArgumentTypes.count + 1 else {
             throw SwiftHookError.incompatibleClosureSignature(description: "For `instead` mode. The number of hook closure parameters should be equal to the number of method parameters + 1 (The first parameter is the `original` closure. The rest is the same as method's). The hook closure parameters number is \(closureArgumentTypes.count). The method parameters number is \(methodArgumentTypes.count).")
         }
@@ -115,7 +115,7 @@ func parametersCheck(targetClass: AnyClass, selector: Selector, mode: HookMode, 
             throw SwiftHookError.incompatibleClosureSignature(description: "For `instead` mode. The parameters type of the original closure (the hook closure's first parameter) must be the same as the method's. The original closure parameters type is `\(originalClosureArgumentTypesDescription)`. But the method parameters type is `\(methodArgumentTypesDescription)`. They are not the same.")
         }
         
-        // external closure (the outside closure)
+        // Hook closure
         guard closureReturnType == methodReturnType else {
             throw SwiftHookError.incompatibleClosureSignature(description: "For `instead` mode. The return type of the hook closure should be the same as method's return type. But the return type of the hook closure is `\(closureReturnType.name)`, The return type of the method is `\(methodReturnType.name)`")
         }
