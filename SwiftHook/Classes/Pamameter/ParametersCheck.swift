@@ -76,13 +76,11 @@ func parametersCheck(targetClass: AnyClass, selector: Selector, mode: HookMode, 
     case .before, .after:
         guard closureReturnType == .voidTypeValue else {
             // TODO: 这里整合到一个新的方法，参数有 是否是isHookingDeallocSelector，Before after or instead 等等
-            throw SwiftHookError.incompatibleClosureSignature(description: "For `befor` and `after` mode. The return type of the hook closure mush be `void`. But it's `\(closureReturnType.name)`")
+            throw getIncompatibleClosureSignatureError(mode: mode, type: .returnType, closureSignature: closureSignature, methodSignature: methodSignature)
         }
         if !closureArgumentTypes.isEmpty {
             guard closureArgumentTypes == methodArgumentTypes else {
-                let closureArgumentTypesDescription = closureArgumentTypes.map({$0.name}).joined(separator: "")
-                let methodArgumentTypesDescription = methodArgumentTypes.map({$0.name}).joined(separator: "")
-                throw SwiftHookError.incompatibleClosureSignature(description: "For `befor` and `after` mode. The parameters type of the hook closure must be the same as method's. The closure parameters type is `\(closureArgumentTypesDescription)`. But the method parameters type is `\(methodArgumentTypesDescription)`. They are not the same.")
+                throw getIncompatibleClosureSignatureError(mode: mode, type: .parametersType, closureSignature: closureSignature, methodSignature: methodSignature)
             }
         }
     case .instead:
@@ -103,26 +101,61 @@ func parametersCheck(targetClass: AnyClass, selector: Selector, mode: HookMode, 
         var originalClosureArgumentTypes = originalClosureSignature.argumentTypes
         
         guard originalClosureReturnType == methodReturnType else {
-            throw SwiftHookError.incompatibleClosureSignature(description: "For `instead` mode. The return type of the original closure (the hook closure's first parameter) should be the same as method's return type. But the return type of the original closure is `\(originalClosureReturnType.name)`, The return type of the method is `\(methodReturnType.name)`")
+            throw getIncompatibleClosureSignatureError(mode: mode, type: .returnType, isInsteadOriginalClosure: true, closureSignature: closureSignature, methodSignature: methodSignature)
         }
         guard originalClosureArgumentTypes.count >= 1 else {
             throw SwiftHookError.internalError(file: #file, line: #line)
         }
         originalClosureArgumentTypes.removeFirst()
         guard originalClosureArgumentTypes == methodArgumentTypes else {
-            let originalClosureArgumentTypesDescription = originalClosureArgumentTypes.map({$0.name}).joined(separator: "")
-            let methodArgumentTypesDescription = methodArgumentTypes.map({$0.name}).joined(separator: "")
-            throw SwiftHookError.incompatibleClosureSignature(description: "For `instead` mode. The parameters type of the original closure (the hook closure's first parameter) must be the same as the method's. The original closure parameters type is `\(originalClosureArgumentTypesDescription)`. But the method parameters type is `\(methodArgumentTypesDescription)`. They are not the same.")
+            throw getIncompatibleClosureSignatureError(mode: mode, type: .parametersType, isInsteadOriginalClosure: true, closureSignature: closureSignature, methodSignature: methodSignature)
         }
         
         // Hook closure
         guard closureReturnType == methodReturnType else {
-            throw SwiftHookError.incompatibleClosureSignature(description: "For `instead` mode. The return type of the hook closure should be the same as method's return type. But the return type of the hook closure is `\(closureReturnType.name)`, The return type of the method is `\(methodReturnType.name)`")
+            throw getIncompatibleClosureSignatureError(mode: mode, type: .returnType, closureSignature: closureSignature, methodSignature: methodSignature)
         }
         guard closureArgumentTypes == methodArgumentTypes else {
-            let closureArgumentTypesDescription = closureArgumentTypes.map({$0.name}).joined(separator: "")
-            let methodArgumentTypesDescription = methodArgumentTypes.map({$0.name}).joined(separator: "")
-            throw SwiftHookError.incompatibleClosureSignature(description: "For `instead` mode. The parameters type of the hook closure except firt one (The first parameter is the `original` closure) must be the same as the method's. But now the parameters type of the hook closure except firt one is `\(closureArgumentTypesDescription)`. But the method parameters type is `\(methodArgumentTypesDescription)`. They are not the same.")
+            throw getIncompatibleClosureSignatureError(mode: mode, type: .parametersType, closureSignature: closureSignature, methodSignature: methodSignature)
         }
     }
+}
+
+// MARK: Incompatible Closure Signature SwiftHookError
+
+enum IncompatibleType {
+    case parametersType
+    case returnType
+}
+
+func getIncompatibleClosureSignatureError(mode: HookMode, type: IncompatibleType, isInsteadOriginalClosure: Bool = false, closureSignature: Signature, methodSignature: Signature) -> SwiftHookError {
+    let description: String
+    
+    switch type {
+    case .parametersType:
+        let closureParametersTypeDescription = closureSignature.argumentTypes.map({$0.name}).joined(separator: "")
+        let methodParametersTypeDescription = methodSignature.argumentTypes.map({$0.name}).joined(separator: "")
+        switch mode {
+        case .before, .after:
+            description = "For `befor` and `after` mode. The parameters type of the hook closure must be the same as method's. The closure parameters type is `\(closureParametersTypeDescription)`. But the method parameters type is `\(methodParametersTypeDescription)`. They are not the same."
+        case .instead:
+            if isInsteadOriginalClosure {
+                description = "For `instead` mode. The parameters type of the original closure (the hook closure's first parameter) must be the same as the method's. The original closure parameters type is `\(closureParametersTypeDescription)`. But the method parameters type is `\(methodParametersTypeDescription)`. They are not the same."
+            } else {
+                description = "For `instead` mode. The parameters type of the hook closure except firt one (The first parameter is the `original` closure) must be the same as the method's. But now the parameters type of the hook closure except firt one is `\(closureParametersTypeDescription)`. But the method parameters type is `\(methodParametersTypeDescription)`. They are not the same."
+            }
+        }
+    case .returnType:
+        switch mode {
+        case .before, .after:
+            description = "For `befor` and `after` mode. The return type of the hook closure mush be `void`. But it's `\(closureSignature.returnType.name)`"
+        case .instead:
+            if isInsteadOriginalClosure {
+                description = "For `instead` mode. The return type of the original closure (the hook closure's first parameter) should be the same as method's return type. But the return type of the original closure is `\(closureSignature.returnType.name)`, The return type of the method is `\(methodSignature.returnType.name)`"
+            } else {
+                description = "For `instead` mode. The return type of the hook closure should be the same as method's return type. But the return type of the hook closure is `\(closureSignature.returnType.name)`, The return type of the method is `\(methodSignature.returnType.name)`"
+            }
+        }
+    }
+    return SwiftHookError.incompatibleClosureSignature(description: description)
 }
